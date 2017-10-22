@@ -1,0 +1,95 @@
+# Reproducible Research - Project 1
+
+## 1. Loading and preprocessing the data
+
+```{r, echo=TRUE}
+setwd("C:/Users/Henry/Documents/DataScience/coursera/c05/p01")
+rm(list=ls())
+data <- read.csv("data/activity.csv")
+data$date = as.Date(as.character(data$date), "%Y-%m-%d")
+head(data)
+str(data)
+```
+
+## 2. mean total number of steps taken per day
+
+```{r, echo=TRUE}
+#Total number of steps per day
+steps.day = tapply(data$steps,data$date, FUN=sum)
+steps.day
+#Total number of steps over two month period
+sum(steps.day, na.rm=TRUE)
+#Histogram of steps per day
+hist(steps.day, breaks = 10)
+#Mean and Median of steps per day
+summary(steps.day)
+```
+
+The total number of steps per day is 570608, the median is 10765 and The mean is 10766. 
+
+Note that the median and mean are very close, which indicates this distribution behaves like a normal distribution.
+
+## 3. Average daily activity pattern
+
+```{r}
+#Calculating Averge number of steps per 5-minute interval
+dataClean = data[!is.na(data$steps),]
+steps.interval = tapply(dataClean$steps, dataClean$interval, FUN=mean)
+minutes = as.integer(names(steps.interval))
+#Ploting averge number of steps per 5-minute interval
+plot(minutes,steps.interval, type = "l")
+#Maximumun Number of steps
+max(steps.interval)
+#Minute and index with maximun number of steps
+which.max(steps.interval)
+```
+
+The maximun number of steps is 206.1698 and it occurs at the minute 835.
+
+## 4. Imputing missing values
+
+```{r}
+#Calculating summary of the original data to show total number of NA's
+summary(data$steps)
+#Separate NA values and substiture with the mean for that 5-minute interval
+dataNA=data[is.na(data$steps),]
+aux = rep(steps.interval, times = 8)
+dataNA$steps=aux
+#Creating new data set with imputed NA's
+data2=rbind(dataClean,dataNA)
+#Calculating the total number of steps per day with imputed NA's
+steps.day2 = tapply(data2$steps,data2$date, FUN=sum)
+#Ploting histograms to compare data with and without imputed NA's
+par(mfrow=c(1,2))
+hist(steps.day, breaks = 10, main="WITHOUT Imputed NA's", ylim = c(0,25))
+hist(steps.day2, breaks = 10, main="WITH Imputed NA's",ylim=c(0,25))
+#Summary of data WITHOUT imputed values
+summary(steps.day)
+#Summary of data WITH imputed values
+summary(steps.day2)
+```
+
+The strategy for filling the missing values of the dataset was the mean of the 5-Minute Interval. With this strategy, the mean and the median remained the same in both cases. The histogram preserves its shape but it has a higher frequency of observations around the mean.
+
+
+## 5. Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+#Setting category for Weekdays and Weekends
+data2$weekday = weekdays(data2$date)
+data2$category = ifelse(data2$weekday %in% c("Saturday","Sunday"),"Weekend","Weekday")
+#spliting the data according to category Weekday/Weekend
+dataWeekday=data2[data2$category=="Weekday",]
+dataWeekend = data2[data2$category=="Weekend",]
+#Calculating Averge number of steps per 5-minute interval
+steps.weekday = tapply(dataWeekday$steps, dataWeekday$interval, FUN=mean)
+steps.weekend = tapply(dataWeekend$steps, dataWeekend$interval, FUN=mean)
+minutes.weekday = as.integer(names(steps.weekday))
+minutes.weekend = as.integer(names(steps.weekend))
+#Ploting averge number of steps per 5-minute interval for weekday
+plot(minutes.weekday,steps.weekday, type = "l", ylim = c(0,250))
+#Ploting averge number of steps per 5-minute interval for weekend
+plot(minutes.weekend,steps.weekend, type = "l", ylim = c(0,250))
+```
+
+According to these plots, there is a clear difference in the steps pattern during weekdays and weekends. During Weekdays the activity is less with peaks sparsely distributed during the day. During weekends there is more constant activity throughout the day.
